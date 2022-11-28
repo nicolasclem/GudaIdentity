@@ -20,15 +20,19 @@ namespace GudaIdentity.Controllers
             return View();
         }
         [HttpGet]
-        public IActionResult Registro()
+        public IActionResult Registro(string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             RegistroViewModel registoVM = new RegistroViewModel();
             return View(registoVM);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Registro(RegistroViewModel rgViewModel)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Registro(RegistroViewModel rgViewModel, string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
+            returnUrl = returnUrl ?? Url.Content("~/");
             if (ModelState.IsValid)
             {
 
@@ -57,8 +61,8 @@ namespace GudaIdentity.Controllers
 
                     await signManager.SignInAsync(usuario, isPersistent: false);
 
-                    return RedirectToAction("Index", "Home");
-
+                    //return RedirectToAction("Index", "Home");
+                    return LocalRedirect(returnUrl);
 
                 }
                 ValidarErrores(resultado);
@@ -80,19 +84,25 @@ namespace GudaIdentity.Controllers
 
         //Mostrar formulario de login
         [HttpGet]
-        public IActionResult Acceso()
+        public IActionResult Acceso(string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
         [HttpPost]
-        public async Task<IActionResult> Acceso (AccesoViewModel accViewModel)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Acceso (AccesoViewModel accViewModel, string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
+            returnUrl = returnUrl ?? Url.Content("~/");
             if (ModelState.IsValid)
             {
                 var resultado = await signManager.PasswordSignInAsync(accViewModel.Email, accViewModel.Password, accViewModel.RemmemberMe,lockoutOnFailure: false);
                 if(resultado.Succeeded) 
                 {
-                    return RedirectToAction("Index", "Home");
+                    //return RedirectToAction("Index", "Home");
+
+                    return LocalRedirect(returnUrl);
                 }
                 else
                 {
@@ -102,5 +112,15 @@ namespace GudaIdentity.Controllers
             }
             return View(accViewModel);
         }
+
+        // logout  de la applicacion
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SalirAplicacion()
+        {
+            await signManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
+
     }
 }

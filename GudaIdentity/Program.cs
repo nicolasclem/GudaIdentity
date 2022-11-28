@@ -17,6 +17,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddIdentity<IdentityUser,IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
+// url de retorno
+builder.Services.ConfigureApplicationCookie(options =>
+ {
+     options.LoginPath = new PathString("/Cuentas/Acceso");
+ });
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
