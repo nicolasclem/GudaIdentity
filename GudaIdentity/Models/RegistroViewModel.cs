@@ -19,7 +19,7 @@ namespace GudaIdentity.Models
         [Compare("Password",ErrorMessage ="La contraseña y confirmacion  no coinciden")]
         [DataType(DataType.Password)]
         [Display(Name = "Confirmar Contraseña")]
-        public string ConfrimPassword { get; set; }
+        public string ConfirmPassword { get; set; }
 
         [Required(ErrorMessage ="Nombre es obligatorio")]
         public string Nombre { get; set; }
@@ -33,6 +33,7 @@ namespace GudaIdentity.Models
         public string Ciudad { get; set; }
         public string Direccion { get; set; }
         [Required(ErrorMessage = "la fecha  es obligatorio")]
+        [Display(Name ="Fecha de Nacimiento")]
         public DateTime FechaNacimiento { get; set; }
 
         [Required(ErrorMessage = "Estado obligatorio")]
