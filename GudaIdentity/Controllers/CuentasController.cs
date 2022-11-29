@@ -62,6 +62,16 @@ namespace GudaIdentity.Controllers
                 if (resultado.Succeeded)
                 {
 
+
+                    // implementacion de confirmacion de email  en el registro
+                    var userCode = await userManager.GenerateEmailConfirmationTokenAsync(usuario);
+                    var urlRetorno = Url.Action("ConfirmarEmail", "Cuentas", new { userId = usuario.Id, code = userCode }, protocol: HttpContext.Request.Scheme);
+
+
+                    await emailSender.SendEmailAsync(rgViewModel.Email, "Bienvenido - GudaIdentity",
+                    "Por Favor Confirme su cuenta  click aqui: <a href=\"" + urlRetorno + "\">Enlace</a>");
+
+
                     await signManager.SignInAsync(usuario, isPersistent: false);
 
                     //return RedirectToAction("Index", "Home");
@@ -202,10 +212,27 @@ namespace GudaIdentity.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult ConfirmacionRecuperaPassword()
         {
             return View();
         }
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmarEmail(string userId, string code)
+        {
+            if(userId == null|| code == null)
+            {
+                return View("Error");
+            }
+            var usuario = await userManager.FindByNameAsync(userId);
 
+            if(usuario == null)
+            {
+                return View("Error");
+            }
+            var resultado = await userManager.ConfirmEmailAsync(usuario, code);
+            return View(resultado.Succeeded?"ConfirmarEmail" : "Error");  
+        }
     }
 }
