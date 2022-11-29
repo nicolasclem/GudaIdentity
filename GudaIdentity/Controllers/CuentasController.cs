@@ -1,5 +1,7 @@
 ﻿using GudaIdentity.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GudaIdentity.Controllers
@@ -8,12 +10,13 @@ namespace GudaIdentity.Controllers
     {
         private readonly UserManager<IdentityUser> userManager;
         private readonly SignInManager<IdentityUser> signManager;
+        private readonly IEmailSender emailSender;
 
-
-        public CuentasController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signManager)
+        public CuentasController(UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signManager , IEmailSender emailSender)
         {
             this.userManager = userManager;
             this.signManager = signManager;
+            this.emailSender = emailSender;
         }
         public IActionResult Index()
         {
@@ -97,12 +100,16 @@ namespace GudaIdentity.Controllers
             returnUrl = returnUrl ?? Url.Content("~/");
             if (ModelState.IsValid)
             {
-                var resultado = await signManager.PasswordSignInAsync(accViewModel.Email, accViewModel.Password, accViewModel.RemmemberMe,lockoutOnFailure: false);
+                var resultado = await signManager.PasswordSignInAsync(accViewModel.Email, accViewModel.Password, accViewModel.RemmemberMe,lockoutOnFailure: true);
                 if(resultado.Succeeded) 
                 {
                     //return RedirectToAction("Index", "Home");
 
                     return LocalRedirect(returnUrl);
+                }
+                if (resultado.IsLockedOut)
+                {
+                    return View("Bloqueado");
                 }
                 else
                 {
@@ -120,6 +127,84 @@ namespace GudaIdentity.Controllers
         {
             await signManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
+        }
+
+
+        //metodo olvido contraseña
+
+
+        [HttpGet]
+        public IActionResult OlvidoPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> OlvidoPassword(OlvidoPasswordViewModel opassViewModel) 
+        {
+            if(ModelState.IsValid)
+            {
+                var usuario = await  userManager.FindByEmailAsync(opassViewModel.Email); 
+                
+                if(usuario == null)
+                {
+                    return RedirectToAction("ConfirmacionOlvidoPass");
+                }
+
+                var codigo = await userManager.GeneratePasswordResetTokenAsync(usuario);
+                var urlRetorno = Url.Action("ResetPassword","Cuentas", new {userId=usuario.Id, code=codigo}, protocol:HttpContext.Request.Scheme);
+
+                await emailSender.SendEmailAsync(opassViewModel.Email,"Recuperar Contraseña - GudaIdentity",
+                    "Recupere su  contraseña dando click aqui: <a href=\""+ urlRetorno +"\">Enlace</a>");
+
+                return RedirectToAction("ConfirmacionOlvidoPass");
+            
+            }
+
+            return View(opassViewModel);
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ConfirmacionOlvidoPass()
+        {
+            return View();
+        }
+
+        //funcionalidad para recuperar  contraseña
+        [HttpGet]
+        public IActionResult ResetPassword(string code=null)
+        {
+            return code==null?View("Error"):View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(RecuperaPasswordViewModel recuViewModel)
+        {
+            if (ModelState.IsValid) 
+            {
+                 var usuario= await userManager.FindByEmailAsync(recuViewModel.Email);
+                 if( usuario == null) 
+                 {
+                    return RedirectToAction("OlvidoPassword");
+                 }
+                var resultado = await userManager.ResetPasswordAsync(usuario, recuViewModel.Code, recuViewModel.Password);
+
+                if (resultado.Succeeded) 
+                {
+                    return RedirectToAction("ConfirmacionRecuperaPassword");
+                }
+                ValidarErrores(resultado);
+            }
+            return View(recuViewModel);
+        }
+
+        [HttpGet]
+        public IActionResult ConfirmacionRecuperaPassword()
+        {
+            return View();
         }
 
     }
