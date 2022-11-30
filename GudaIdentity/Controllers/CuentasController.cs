@@ -285,5 +285,38 @@ namespace GudaIdentity.Controllers
                 return View("ConfirmacionAccesoExterno", new ConfirmacionAccesoExternoViewModels { Email = email, Name = nombre});
             }
         }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public  async Task<IActionResult> ConfirmacionAccesoExterno(ConfirmacionAccesoExternoViewModels   conAEViewModel,string returnurl= null)
+        {
+            returnurl = returnurl ?? Url.Content("~/");
+            if( ModelState.IsValid) 
+            {
+                // obtener la informacion del usuario del proveedor externo
+                var info = await signManager.GetExternalLoginInfoAsync();
+                if (info == null)
+                {
+                    return View("Error");
+                }
+                var usuario = new AppUsuario { UserName =conAEViewModel.Email, Email = conAEViewModel.Email,Nombre=conAEViewModel.Name };
+                var resultado = await userManager.CreateAsync(usuario);
+
+                if (resultado.Succeeded)
+                {
+                    resultado = await userManager.AddLoginAsync(usuario, info);
+                    if (resultado.Succeeded) 
+                    {
+                        await signManager.SignInAsync(usuario, isPersistent:false);
+                        await signManager.UpdateExternalAuthenticationTokensAsync(info);
+                        return LocalRedirect(returnurl);
+                    }
+                }
+                ValidarErrores(resultado);
+            }
+            ViewData["ReturnUrl"] = returnurl;
+            return View(conAEViewModel);
+        }
     }
 }
