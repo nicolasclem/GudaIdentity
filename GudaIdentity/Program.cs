@@ -40,7 +40,13 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 
 });
+// agregar autenticacion de facebook 
 
+builder.Services.AddAuthentication().AddFacebook(options =>
+{
+    options.AppId = "699502488564571";
+    options.AppSecret = "d6ab7e007ba0259f4f14461a3df2d2ac";
+});
 //se agrega el servico  de IEmailSender
 
 builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();

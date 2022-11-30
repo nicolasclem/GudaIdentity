@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace GudaIdentity.Controllers
 {
@@ -233,6 +234,56 @@ namespace GudaIdentity.Controllers
             }
             var resultado = await userManager.ConfirmEmailAsync(usuario, code);
             return View(resultado.Succeeded?"ConfirmarEmail" : "Error");  
+        }
+
+        //Configuracion de acceso externo
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public IActionResult AccesoExterno(string proveedor, string  returnUrl=null)
+        {
+            var urlRedireccion = Url.Action("AccesoExternoCallBack", "Cuentas", new { ReturnUrl = returnUrl });
+            var propiedades = signManager.ConfigureExternalAuthenticationProperties(proveedor, urlRedireccion);
+            
+            return Challenge(propiedades, proveedor);
+        
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> AccesoExternoCallBack(string returnurl= null, string error = null)
+        {
+            returnurl = returnurl ?? Url.Content("~/");
+            if( error !=null ) 
+            {
+                ModelState.AddModelError(string.Empty,$"Error en el acceso externo:   {error}");
+                return View("Acceso");
+            }
+            var info= await signManager.GetExternalLoginInfoAsync();
+            if(info == null)
+            {
+                return RedirectToAction("Acceso");
+            }
+            //Acceder con el usuario en el proveedor externo
+
+            var resultado = await signManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false); 
+
+            if(resultado.Succeeded) 
+            {
+                //actualizo los tokens de acceso
+                await signManager.UpdateExternalAuthenticationTokensAsync(info);
+                return RedirectToAction(returnurl);
+            }
+            else
+            {
+                //Si el usuario no tiene cuenta pregunta si quiere crear una
+                ViewData["ReturnUrl"] = returnurl;
+                ViewData["NombreAMostrarProveedor"] = info.ProviderDisplayName;
+
+                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+                var nombre = info.Principal.FindFirstValue(ClaimTypes.Name);
+                return View("ConfirmacionAccesoExterno", new ConfirmacionAccesoExternoViewModels { Email = email, Name = nombre});
+            }
         }
     }
 }
