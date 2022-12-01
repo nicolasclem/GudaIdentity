@@ -47,6 +47,12 @@ builder.Services.AddAuthentication().AddFacebook(options =>
     options.AppId = "699502488564571";
     options.AppSecret = "d6ab7e007ba0259f4f14461a3df2d2ac";
 });
+// agregar autenticacion de Google
+builder.Services.AddAuthentication().AddGoogle(options =>
+{
+    options.ClientId = "866854108332-g9q9etqtag0ttmugiikjj0lq4tql1bvh.apps.googleusercontent.com";
+    options.ClientSecret = "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";
+});
 //se agrega el servico  de IEmailSender
 
 builder.Services.AddTransient<IEmailSender, MailJetEmailSender>();

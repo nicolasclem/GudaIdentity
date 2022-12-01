@@ -59,8 +59,10 @@
                             <div class="mt-4">
                                 <p>
                                     @foreach (var proveedor in proveedoresAcesso)
+                                {
+                                    if (proveedor.Name == "Facebook")
                                     {
-                                          <button 
+                                        <button 
                                               type="submit"
                                               class="btn btn-primary w-100"
                                               name="proveedor"
@@ -68,9 +70,23 @@
                                               title="Accede Usando su cuenta  @proveedor.Name"                   
 
                                           >
-                                           @proveedor.Name 
-                                           </button>                                                
+                                            <i class="bi bi-facebook p-2"></i>@proveedor.Name 
+                                        </button>
                                     }
+                                    if (proveedor.Name == "Google")
+                                    {
+                                                    <button 
+                                              type="submit"
+                                              class="btn btn-danger w-100 mt-3"
+                                              name="proveedor"
+                                              value="@proveedor.Name"
+                                              title="Accede Usando su cuenta  @proveedor.Name"                   
+
+                                          >
+                                                        <i class="bi bi-google p-2"></i>@proveedor.Name 
+                                                    </button>
+                                    }
+                                }
                                 </p>
                             </div>
                         </form>        
