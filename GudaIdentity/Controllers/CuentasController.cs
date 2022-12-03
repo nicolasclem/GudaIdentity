@@ -318,5 +318,15 @@ namespace GudaIdentity.Controllers
             ViewData["ReturnUrl"] = returnurl;
             return View(conAEViewModel);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> ActivarAutenticador()
+        {
+            var usuario = await userManager.GetUserAsync(User);
+            await userManager.ResetAuthenticatorKeyAsync(usuario);
+            var token = await userManager.GetAuthenticatorKeyAsync(usuario);
+            var adfModel = new AutenticacionDosFactoresViewModel() { Token = token };
+            return View(adfModel);        
+        }
     }
 }
